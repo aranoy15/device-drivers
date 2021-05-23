@@ -267,7 +267,11 @@ impl<I2cType, DelayType> Lcd<I2cType, DelayType>
     }
 }
 
-impl<I2cType, DelayType> LcdTrait for Lcd<I2cType, DelayType>  {
+impl<I2cType, DelayType> LcdTrait for Lcd<I2cType, DelayType>
+    where
+        I2cType: Write,
+        DelayType: DelayMs<u16>
+{
     /// Init lcd display
     ///
     /// # Example
