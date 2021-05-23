@@ -39,11 +39,11 @@ pub trait LcdTrait {
     fn display(&mut self) -> Result<(), ()>;
     fn no_display(&mut self) -> Result<(), ()>;
     fn home(&mut self) -> Result<(), ()>;
-    fn set_cursor(&mut self, col: u8, mut row: u8) -> Result<(), ()>;
+    fn set_cursor(&mut self, col: u8, row: u8) -> Result<(), ()>;
     fn write_char(&mut self, data: char) -> Result<(), ()>;
     fn write_bytes(&mut self, data: &[u8]) -> Result<(), ()>;
     fn write_str(&mut self, data: &str) -> Result<(), ()>;
-    fn create_char(&mut self, mut location: u8, char_map: &[u8; 8]) -> Result<(), ()>;
+    fn create_char(&mut self, location: u8, char_map: &[u8; 8]) -> Result<(), ()>;
     fn write_custom_char(&mut self, location: u8) -> Result<(), ()>;
 }
 
