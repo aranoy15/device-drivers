@@ -1,5 +1,12 @@
 
-pub trait RtcTrait {
+pub trait RtcTrait<T>
+    where
+        T: DateTimeTrait
+{
+    type Error;
+
+    fn set(&mut self, datetime: &T) -> Result<(), Self::Error>;
+    fn get(&mut self) -> Result<T, Self::Error>;
 }
 
 /// Real-Time Clock / Calendar
@@ -8,22 +15,22 @@ pub trait DateTimeTrait {
     type Error;
 
     /// Read the seconds.
-    fn get_seconds(&mut self) -> Result<u8, Self::Error>;
+    fn get_seconds(&self) -> Result<u8, Self::Error>;
 
     /// Read the minutes.
-    fn get_minutes(&mut self) -> Result<u8, Self::Error>;
+    fn get_minutes(&self) -> Result<u8, Self::Error>;
 
     /// Read the hours.
-    fn get_hours(&mut self) -> Result<u8, Self::Error>;
+    fn get_hours(&self) -> Result<u8, Self::Error>;
 
     /// Read the day of the month [1-31].
-    fn get_day(&mut self) -> Result<u8, Self::Error>;
+    fn get_day(&self) -> Result<u8, Self::Error>;
 
     /// Read the month [1-12].
-    fn get_month(&mut self) -> Result<u8, Self::Error>;
+    fn get_month(&self) -> Result<u8, Self::Error>;
 
     /// Read the year (e.g. 2000).
-    fn get_year(&mut self) -> Result<u16, Self::Error>;
+    fn get_year(&self) -> Result<u16, Self::Error>;
 
     /// Set the seconds [0-59].
     fn set_seconds(&mut self, seconds: u8) -> Result<(), Self::Error>;

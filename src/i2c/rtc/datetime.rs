@@ -10,6 +10,49 @@ pub struct DateTime {
     year: u16
 }
 
+impl DateTime {
+    pub fn new() -> Self {
+        DateTime {
+            seconds: 0_u8,
+            minutes: 0_u8,
+            hours: 0_u8,
+            day: 1_u8,
+            month: 1_u8,
+            year: 1970_u16
+        }
+    }
+
+    pub fn seconds(mut self, seconds: u8) -> Self {
+        self.seconds = seconds;
+        self
+    }
+
+    pub fn minutes(mut self, minutes: u8) -> Self {
+        self.minutes = minutes;
+        self
+    }
+
+    pub fn hours(mut self, hours: u8) -> Self {
+        self.hours = hours;
+        self
+    }
+
+    pub fn day(mut self, day: u8) -> Self {
+        self.day = day;
+        self
+    }
+
+    pub fn month(mut self, month: u8) -> Self {
+        self.month = month;
+        self
+    }
+
+    pub fn year(mut self, year: u16) -> Self {
+        self.year = year;
+        self
+    }
+}
+
 #[allow(dead_code)]
 const DAYS_IN_MONTH: [u8; 12] = [31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31, 29];
 
@@ -21,32 +64,32 @@ impl DateTimeTrait for DateTime {
     type Error = DateTimeErrors;
 
     /// Read the seconds.
-    fn get_seconds(&mut self) -> Result<u8, Self::Error> {
+    fn get_seconds(&self) -> Result<u8, Self::Error> {
         Ok(self.minutes)
     }
 
     /// Read the minutes.
-    fn get_minutes(&mut self) -> Result<u8, Self::Error> {
+    fn get_minutes(&self) -> Result<u8, Self::Error> {
         Ok(self.minutes)
     }
 
     /// Read the hours.
-    fn get_hours(&mut self) -> Result<u8, Self::Error> {
+    fn get_hours(&self) -> Result<u8, Self::Error> {
         Ok(self.hours)
     }
 
     /// Read the day of the month [1-31].
-    fn get_day(&mut self) -> Result<u8, Self::Error> {
+    fn get_day(&self) -> Result<u8, Self::Error> {
         Ok(self.day)
     }
 
     /// Read the month [1-12].
-    fn get_month(&mut self) -> Result<u8, Self::Error> {
+    fn get_month(&self) -> Result<u8, Self::Error> {
         Ok(self.month)
     }
 
     /// Read the year (e.g. 2000).
-    fn get_year(&mut self) -> Result<u16, Self::Error> {
+    fn get_year(&self) -> Result<u16, Self::Error> {
         Ok(self.year)
     }
 
@@ -76,7 +119,7 @@ impl DateTimeTrait for DateTime {
 
     /// Set the day of month [1-31].
     fn set_day(&mut self, day: u8) -> Result<(), Self::Error> {
-        if day > 31 { return Err(Self::Error::WrongValue); }
+        if day > 31 || day == 0 { return Err(Self::Error::WrongValue); }
 
         self.day = day;
         Ok(())
@@ -84,7 +127,7 @@ impl DateTimeTrait for DateTime {
 
     /// Set the month [1-12].
     fn set_month(&mut self, month: u8) -> Result<(), Self::Error> {
-        if month > 12 { return Err(Self::Error::WrongValue); }
+        if month > 12 || month == 0 { return Err(Self::Error::WrongValue); }
 
         self.month = month;
         Ok(())

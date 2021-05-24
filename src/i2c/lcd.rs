@@ -69,8 +69,8 @@ pub trait LcdTrait {
 /// ```
 ///
 #[derive(Default)]
-pub struct Lcd<I2cType, DelayType> {
-    i2c: I2cType,
+pub struct Lcd<I2CType, DelayType> {
+    i2c: I2CType,
     address: u8,
     delay: DelayType,
 
