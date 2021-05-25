@@ -78,6 +78,14 @@ impl<I2CType> RtcTrait<DateTime> for Rtc<I2CType>
 
         self.write(&data_to_send)?;
 
+        let mut status_reg = [0_u8];
+
+        self.read(&mut status_reg)?;
+        status_reg[0] &= !0x80;
+
+        let output_data: [u8; 2] = [ControlData::StatusReg as u8, status_reg[0]];
+        self.write(&output_data)?;
+
         Ok(())
     }
 
