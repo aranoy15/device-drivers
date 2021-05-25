@@ -1,5 +1,8 @@
 
-pub trait RtcTrait {
+pub trait RtcTrait<T>
+    where
+        T: DateTimeTrait
+{
     type Error;
 
     fn set(&mut self, datetime: &T) -> Result<(), Self::Error>;
