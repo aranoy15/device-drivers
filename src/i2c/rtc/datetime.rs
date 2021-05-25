@@ -64,9 +64,7 @@ impl DateTimeTrait for DateTime {
     type Error = DateTimeErrors;
 
     /// Read the seconds.
-    fn get_seconds(&self) -> Result<u8, Self::Error> {
-        Ok(self.minutes)
-    }
+    fn get_seconds(&self) -> Result<u8, Self::Error> { Ok(self.seconds) }
 
     /// Read the minutes.
     fn get_minutes(&self) -> Result<u8, Self::Error> {
