@@ -25,6 +25,27 @@ pub enum Mhz19Errors {
     WrongValue
 }
 
+fn crc(data: &[u8]) -> u8 {
+    let mut result: u8 = 0;
+
+    for &number in data {
+        //result += number;
+       match result.overflowing_add(number) {
+           (value, _) => { result = value; }
+       }
+    }
+
+    match 0xFF_u8.overflowing_sub(result) {
+        (value, _) => { result = value; }
+    }
+
+    match result.overflowing_sub(1_u8) {
+        (value, _) => { result = value; }
+    }
+
+    result
+}
+
 pub trait Mhz19Trait {
     type Error;
 
@@ -66,10 +87,10 @@ impl<SerialType, TimerType> Mhz19<SerialType, TimerType>
         self.buffer[5] = data[2];
         self.buffer[6] = data[3];
         self.buffer[7] = data[4];
-        self.buffer[8] = self.crc();
+        self.buffer[8] = crc(&self.buffer[0..8]);
 
-        for b in self.buffer.iter() {
-            match nb::block!(self.serial.write(*b)) {
+        for &b in self.buffer.iter() {
+            match nb::block!(self.serial.write(b)) {
                 Err(_) => { return Err(Mhz19Errors::ErrorWrite); }
                 _ => {}
             }
@@ -88,7 +109,7 @@ impl<SerialType, TimerType> Mhz19<SerialType, TimerType>
                 count += 1;
 
                 if count == 9 {
-                    if self.crc() == self.buffer[8] {
+                    if crc(&self.buffer[0..8]) == self.buffer[8] {
                         return Ok(());
                     }
                 }
@@ -96,19 +117,6 @@ impl<SerialType, TimerType> Mhz19<SerialType, TimerType>
         }
 
         Err(Mhz19Errors::ErrorRead)
-    }
-
-    fn crc(&self) -> u8 {
-        let mut result = 0_u8;
-
-        for number in &self.buffer[0..8] {
-            result += *number;
-        }
-
-        result = 0xFF - result;
-        result += 1;
-
-        result
     }
 }
 
@@ -148,5 +156,152 @@ impl<SerialType, TimerType> Mhz19Trait for Mhz19<SerialType, TimerType>
 
     fn set_range(&mut self) -> Result<(), Self::Error> {
         Ok(())
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use embedded_hal::serial::{Write, Read};
+    use embedded_hal::timer::CountDown;
+    use std::collections::VecDeque;
+
+    type Word = u8;
+
+    struct DumpTimer {
+        counter: u32,
+        timeout: u32
+    }
+
+    impl DumpTimer {
+        fn new() -> Self {
+            Self {
+                counter: 0_u32,
+                timeout: 0_u32
+            }
+        }
+    }
+
+    impl CountDown for DumpTimer {
+        type Time = u32;
+
+        fn start<T>(&mut self, count: T) where
+            T: Into<Self::Time> {
+
+            self.timeout = count.into();
+        }
+
+        fn wait(&mut self) -> nb::Result<(), void::Void> {
+            self.counter += 1;
+
+            if self.counter >= self.timeout {
+                return Ok(());
+            }
+
+            Err(nb::Error::WouldBlock)
+        }
+    }
+
+    struct DumpSerial {
+        input_data: VecDeque<u8>,
+        output_data: VecDeque<u8>
+    }
+
+    impl DumpSerial {
+        fn new() -> Self {
+            Self {
+                input_data: VecDeque::new(),
+                output_data: VecDeque::new()
+            }
+        }
+
+        fn process(&mut self, data: &[u8]) {
+            if data[0] != 0xFF { return; }
+            if data[1] != 0x01 { return; }
+
+            match data[2] {
+                0x86 => {
+                    self.output_data.push_back(0xFF);
+                    self.output_data.push_back(0x01);
+                    self.output_data.push_back(0x04);
+                    self.output_data.push_back(0xB0);
+                    self.output_data.push_back(0x00);
+                    self.output_data.push_back(0x00);
+                    self.output_data.push_back(0x00);
+                    self.output_data.push_back(0x00);
+
+                    let (front, _) = self.output_data.as_slices();
+                    let crc = crc(front);
+                    self.output_data.push_back(crc);
+                },
+                _ => { panic!("unexpected command!"); }
+            }
+        }
+
+        fn receive(&mut self, data: u8) {
+            self.input_data.push_back(data);
+
+            if self.input_data.len() == 9 {
+                let mut parse_buffer: [u8; 9] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+                for mut d in parse_buffer.iter_mut() {
+                    match self.input_data.pop_front() {
+                        Some(inp) => { *d = inp; },
+                        _ => {}
+                    }
+                }
+
+                if crc(&parse_buffer[0..8]) == parse_buffer[8] {
+                    self.process(&parse_buffer);
+                }
+            }
+        }
+    }
+
+    impl Write<Word> for DumpSerial {
+        type Error = nb::Error<()>;
+
+        fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
+            self.receive(word);
+
+            Ok(())
+        }
+
+        fn flush(&mut self) -> nb::Result<(), Self::Error> {
+            Ok(())
+        }
+    }
+
+    impl Read<Word> for DumpSerial {
+        type Error = nb::Error<()>;
+
+        fn read(&mut self) -> nb::Result<u8, Self::Error> {
+            if self.output_data.is_empty() {
+                return Err(nb::Error::WouldBlock);
+            }
+
+            let mut result = 0_u8;
+            match self.output_data.pop_front() {
+                Some(d) => { result = d; },
+                _ => { return Err(nb::Error::WouldBlock); }
+            }
+
+            Ok(result)
+        }
+    }
+
+    type TestMhz19Type = Mhz19<DumpSerial, DumpTimer>;
+
+    #[test]
+    fn test_get_co2() {
+        let serial = DumpSerial::new();
+        let timer = DumpTimer::new();
+
+        let mut mhz = TestMhz19Type::new(serial, timer);
+
+        let co2 = mhz.get_co2().unwrap_or(0);
+
+        assert_eq!(co2, 1200);
     }
 }

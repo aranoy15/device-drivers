@@ -62,7 +62,6 @@ pub trait LcdTrait {
 ///     .rows(4)
 ///     .char_size(1)
 ///     .build();
-///
 /// lcd.init().unwrap();
 /// lcd.reset().unwrap();
 /// lcd.clear().unwrap();
@@ -536,4 +535,8 @@ impl<I2cType, DelayType> LcdTrait for Lcd<I2cType, DelayType>
 
         Ok(())
     }
+}
+
+#[cfg(test)]
+mod tests {
 }
