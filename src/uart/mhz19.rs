@@ -28,20 +28,26 @@ pub enum Mhz19Errors {
 fn crc(data: &[u8]) -> u8 {
     let mut result: u8 = 0;
 
+    let _len = data.len();
+
     for &number in data {
         //result += number;
        match result.overflowing_add(number) {
-           (value, _) => { result = value; }
+           (value, _) => {
+               result = value;
+           }
        }
     }
 
-    match 0xFF_u8.overflowing_sub(result) {
+    match 255_u8.overflowing_sub(result) {
         (value, _) => { result = value; }
     }
 
-    match result.overflowing_sub(1_u8) {
+    /*
+    match result.overflowing_add(1_u8) {
         (value, _) => { result = value; }
     }
+    */
 
     result
 }
@@ -292,6 +298,17 @@ mod tests {
     }
 
     type TestMhz19Type = Mhz19<DumpSerial, DumpTimer>;
+
+    #[test]
+    fn test_crc() {
+        let test_data_1: [u8; 9] = [0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79];
+        let test_data_2: [u8; 9] = [0xFF, 0x01, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x78];
+        let test_data_3: [u8; 9] = [0xFF, 0x01, 0x88, 0x07, 0xD0, 0x00, 0x00, 0x00, 0xA0];
+
+        assert_eq!(crc(&test_data_1[0..8]), test_data_1[8]);
+        assert_eq!(crc(&test_data_2[0..8]), test_data_2[8]);
+        assert_eq!(crc(&test_data_3[0..8]), test_data_3[8]);
+    }
 
     #[test]
     fn test_get_co2() {
