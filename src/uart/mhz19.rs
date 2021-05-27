@@ -96,10 +96,13 @@ impl<SerialType, TimerType> Mhz19<SerialType, TimerType>
         self.buffer[8] = crc(&self.buffer[0..8]);
 
         for &b in self.buffer.iter() {
+            nb::block!(self.serial.write(b)).ok();
+            /*
             match nb::block!(self.serial.write(b)) {
                 Err(_) => { return Err(Mhz19Errors::ErrorWrite); }
                 _ => {}
             }
+             */
         }
 
         Ok(())
